@@ -45,7 +45,7 @@ impl Game {
                         captured_coords.len() + 1,
                         coord,
                         captured_coords,
-                        self.current_opponent(),
+                        *self.board.current_player(),
                     )),
                 }
             }
@@ -58,6 +58,7 @@ impl Game {
             PlayResult::ValidWithScore(play) => {
                 self.board.capture_squares(play);
                 self.last_valid_uncommited_play = PlayResult::Undefined;
+                *self.board.current_player_mut() = self.current_opponent();
 
                 Ok(())
             }
@@ -95,7 +96,7 @@ impl Game {
                 BoardSquare::Played(piece) => {
                     if *piece == self.current_opponent() {
                         hops += 1;
-                        switchable_coords.push(coord);
+                        switchable_coords.push(*current_coord_square.coord());
                     } else {
                         return switchable_coords;
                     }
@@ -142,35 +143,31 @@ mod tests {
     #[test]
     fn checking_valid_play_sets_state_correctly() {
         let mut game = Game::new();
-        const COORD_1: (usize, usize) = (3, 2);
-        const COORD_2: (usize, usize) = (2, 3);
-        const COORD_3: (usize, usize) = (4, 5);
-        const COORD_4: (usize, usize) = (5, 4);
 
         game.check_play((3, 2));
         assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
-            1,
+            2, // 2 because I add a new piece and capture a piece
             (3, 2),
             vec![(3, 3)],
             Piece::White)));
 
         game.check_play((2, 3));
         assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
-            1,
+            2,
             (2, 3),
             vec![(3, 3)],
             Piece::White)));
 
         game.check_play((4, 5));
         assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
-            1,
+            2,
             (4, 5),
             vec![(4, 4)],
             Piece::White)));
 
         game.check_play((5, 4));
         assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
-            1,
+            2,
             (5, 4),
             vec![(4, 4)],
             Piece::White)));

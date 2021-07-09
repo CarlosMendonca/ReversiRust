@@ -7,7 +7,6 @@ use crate::reversi::piece::*;
 pub struct Game {
     board: Board,
     current_player: Piece,
-    last_valid_uncommited_play: PlayResult,
     available_positions: Vec<ValidPlay>,
 }
 
@@ -16,7 +15,6 @@ impl Game {
         let mut game = Game {
             board: Board::new(),
             current_player: Piece::White,
-            last_valid_uncommited_play: PlayResult::Undefined,
             available_positions: Vec::new(),
         };
 
@@ -32,10 +30,6 @@ impl Game {
         //     match Play { 0 => continue; _ => return true }
 
         true
-    }
-
-    pub fn check_play(&mut self, coord: (usize, usize)) {
-        self.last_valid_uncommited_play = self.check_play_new(coord);
     }
 
     pub fn check_play_new(&mut self, coord: (usize, usize)) -> PlayResult {
@@ -59,22 +53,6 @@ impl Game {
                         self.current_player,
                     )),
                 }
-            }
-        }
-    }
-
-    pub fn commit_last_play(&mut self) -> Result<(), PlayError> {
-        match &self.last_valid_uncommited_play {
-            PlayResult::Invalid | PlayResult::Undefined => Err(PlayError),
-            PlayResult::ValidWithScore(play) => {
-                let mut coords_to_flip: Vec<(usize, usize)> = play.changed_coords().clone();
-                coords_to_flip.push(*play.coord());
-
-                self.board.set_squares(&coords_to_flip, *play.player());
-                self.last_valid_uncommited_play = PlayResult::Undefined;
-                self.current_player = self.current_opponent();
-
-                Ok(())
             }
         }
     }
@@ -177,9 +155,6 @@ mod tests {
     fn can_initialize_game() {
         let game = Game::new();
 
-        // Asserting play result
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::Undefined);
-
         // Assert first player, which is white
         assert_eq!(game.current_player, Piece::White);
     }
@@ -188,39 +163,40 @@ mod tests {
     fn checking_invalid_play_sets_status_correctly() {
         let mut game = Game::new();
 
-        game.check_play((0, 0));
+        let play = game.check_play_new((0, 0));
 
         // Asserting an invalid play (first row, first column on a starting board)
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::Invalid);
+        assert_eq!(play, PlayResult::Invalid);
     }
 
     #[test]
     fn checking_valid_play_sets_state_correctly() {
         let mut game = Game::new();
+        let mut play: PlayResult;
 
-        game.check_play((3, 2));
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
+        play = game.check_play_new((3, 2));
+        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
             2, // 2 because I add a new piece and capture a piece
             (3, 2),
             vec![(3, 3)],
             Piece::White)));
 
-        game.check_play((2, 3));
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
+        play = game.check_play_new((2, 3));
+        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
             2,
             (2, 3),
             vec![(3, 3)],
             Piece::White)));
 
-        game.check_play((4, 5));
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
+        play = game.check_play_new((4, 5));
+        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
             2,
             (4, 5),
             vec![(4, 4)],
             Piece::White)));
 
-        game.check_play((5, 4));
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::ValidWithScore(ValidPlay::new(
+        play = game.check_play_new((5, 4));
+        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
             2,
             (5, 4),
             vec![(4, 4)],
@@ -228,23 +204,18 @@ mod tests {
     }
 
     #[test]
-    fn commiting_invalid_play_maintains_state_correctly() {
+    fn playing_invalid_play_returns_error() {
         let mut game = Game::new();
 
-        game.check_play((0, 0));
-        assert!(game.commit_last_play().is_err());
+        assert!(game.try_play((0,0)).is_err());
     }
 
     #[test]
-    fn commiting_valid_play_changes_state_correctly() {
+    fn playing_valid_play_advances_game() {
         let mut game = Game::new();
 
-        game.check_play((3, 2));
-        let result = game.commit_last_play();
+        assert!(game.try_play((3, 2)).is_ok());
 
-        assert!(result.is_ok());
-
-        assert_eq!(game.last_valid_uncommited_play, PlayResult::Undefined);
         assert_eq!(game.current_player, Piece::Black);
 
         assert_eq!(game.board.get_coord_square_at((3, 3)), CoordinatedBoardSquare::new((3, 3), BoardSquare::Played(Piece::White)));

@@ -7,13 +7,11 @@ fn main() {
     
     println!("{}", game);
     
-    game.check_play((3, 2));
-    game.commit_last_play();
+    game.try_play((3, 2));
 
     println!("{}", game);
 
-    game.check_play((4, 2));
-    game.commit_last_play();
+    game.try_play((4, 2));
 
     println!("{}", game);
 }

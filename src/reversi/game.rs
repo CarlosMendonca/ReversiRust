@@ -23,13 +23,7 @@ impl Game {
     }
 
     pub fn is_game_over(&self) -> bool {
-        // game is not over as long as there is at least one valid play for current player
-
-        // for each position
-        //   check whether the position is valid (i.e. captures more than 0 pieces)
-        //     match Play { 0 => continue; _ => return true }
-
-        true
+        self.available_positions.len() == 0
     }
 
     pub fn check_play_new(&mut self, coord: (usize, usize)) -> PlayResult {
@@ -157,6 +151,7 @@ mod tests {
 
         // Assert first player, which is white
         assert_eq!(game.current_player, Piece::White);
+        assert!(!game.is_game_over());
     }
 
     #[test]
@@ -256,5 +251,11 @@ mod tests {
         assert!(matches!(game.available_positions[0].coord(), (2,2)));
         assert!(matches!(game.available_positions[1].coord(), (2,4)));
         assert!(matches!(game.available_positions[2].coord(), (4,2)));
+    }
+
+    #[test]
+    #[ignore]
+    fn game_over_correctly_indicated() {
+
     }
 }

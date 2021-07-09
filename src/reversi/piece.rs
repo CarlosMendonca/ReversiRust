@@ -9,9 +9,11 @@ pub enum Piece {
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
        match self {
-           Piece::Black => write!(f, "B"),
-           Piece::White => write!(f, "W"),
+           Piece::Black => write!(f, "B")?,
+           Piece::White => write!(f, "W")?,
        }
+
+       Ok(())
     }
 }
 
@@ -25,8 +27,32 @@ pub enum BoardSquare {
 impl fmt::Display for BoardSquare {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
        match self {
-           BoardSquare::Played(p) => write!(f, "{}", p),
-           _ => write!(f, "?"),
+           BoardSquare::Played(p) => write!(f, "{}", p)?,
+           _ => write!(f, "?")?,
        }
+
+       Ok(())
+    }
+}
+
+pub struct CoordinatedBoardSquare {
+    coord: (usize, usize),
+    square: BoardSquare,    
+}
+
+impl CoordinatedBoardSquare {
+    pub fn new(coord: (usize, usize), square: BoardSquare) -> CoordinatedBoardSquare {
+        CoordinatedBoardSquare { 
+            coord: coord,
+            square: square,
+        }
+    }
+
+    pub fn coord(&self) -> &(usize, usize) {
+        &self.coord
+    }
+
+    pub fn square(&self) -> &BoardSquare {
+        &self.square
     }
 }

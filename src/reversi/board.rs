@@ -1,8 +1,8 @@
 use std::fmt;
 use array2d::Array2D;
 
-use crate::reversi::piece::{BoardSquare, Piece};
-use crate::reversi::play::{PlayResult};
+use crate::reversi::piece::{BoardSquare, CoordinatedBoardSquare, Piece};
+use crate::reversi::play::{ValidPlay};
 
 pub struct Board {
     current_player: Piece,
@@ -25,31 +25,41 @@ impl Board {
         board
     }
 
-    pub fn get_square_at(&self, coord: (usize, usize)) -> BoardSquare {
-        Board::get_square_towards(self, coord, (0, 0), 0)
+    pub fn get_coord_square_at(&self, coord: (usize, usize)) -> CoordinatedBoardSquare {
+        return Board::get_coord_square_towards(self, coord, (0, 0), 0)
     }
 
     // This method will fail catastrophically for big board sizes (isize::MAX+1)!
-    pub fn get_square_towards(&self, coord: (usize, usize), vector: (isize, isize), hops: usize) -> BoardSquare {
+    pub fn get_coord_square_towards(&self, coord: (usize, usize), vector: (isize, isize), hops: usize) -> CoordinatedBoardSquare {
         let row = vector.0 * (hops as isize) + coord.0 as isize;
         let column = vector.1 * (hops as isize) + coord.1 as isize;
 
         if row < 0 || column < 0 || row > self.squares.num_rows() as isize - 1 || column > self.squares.num_columns() as isize - 1 {
-            return BoardSquare::OutOfBounds;
+            return CoordinatedBoardSquare::new((row as usize, column as usize), BoardSquare::OutOfBounds);
         }
 
-        self.squares[(row as usize, column as usize)]
+        CoordinatedBoardSquare::new(
+            (row as usize, column as usize),
+            self.squares[(row as usize, column as usize)],
+        )
     }
 
-    pub fn current_opponent(&self) -> Piece {
-        match self.current_player {
-            Piece::Black => Piece::White,
-            Piece::White => Piece::Black,
+    // This is a naive that could put the board in an invalid state, which is okay because it optimizes the code by
+    // avoiding roundtrips and makes it so that the Board doens't know the rules of the game
+    pub fn capture_squares(&mut self, play: &ValidPlay) {
+        for coord in play.changed_coords() {
+            self.squares[*coord] = BoardSquare::Played(*play.player())
         }
     }
 
-    pub fn current_player(&self) -> Piece {
-        self.current_player
+    // Not sure this is idiomatic
+    pub fn current_player(&self) -> &Piece {
+        &self.current_player
+    }
+
+    // Not sure this is idiomatic
+    pub fn current_player_mut(&mut self) -> &mut Piece {
+        &mut self.current_player
     }
 }
 

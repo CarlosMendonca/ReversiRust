@@ -8,7 +8,7 @@ pub struct Board {
 }
 
 impl Board {
-    const BOARD_SIZE: usize = 8; // keep this low to avoid problems with isize <-> conversions 
+    pub const BOARD_SIZE: usize = 8; // keep this low to avoid problems with isize <-> conversions 
 
     pub fn new() -> Board {
         let mut board = Board {

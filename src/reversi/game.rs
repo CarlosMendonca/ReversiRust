@@ -8,15 +8,20 @@ pub struct Game {
     board: Board,
     current_player: Piece,
     last_valid_uncommited_play: PlayResult,
+    available_positions: Vec<ValidPlay>,
 }
 
 impl Game {
     pub fn new() -> Game {
-        Game {
+        let mut game = Game {
             board: Board::new(),
             current_player: Piece::White,
             last_valid_uncommited_play: PlayResult::Undefined,
-        }
+            available_positions: Vec::new(),
+        };
+
+        game.check_available_positions();
+        game
     }
 
     pub fn is_game_over(&self) -> bool {
@@ -30,9 +35,13 @@ impl Game {
     }
 
     pub fn check_play(&mut self, coord: (usize, usize)) {
+        self.last_valid_uncommited_play = self.check_play_new(coord);
+    }
+
+    pub fn check_play_new(&mut self, coord: (usize, usize)) -> PlayResult {
         match self.board.get_coord_square_at(coord).square() {
-            BoardSquare::Played(_)   => self.last_valid_uncommited_play = PlayResult::Invalid,
-            BoardSquare::OutOfBounds => self.last_valid_uncommited_play = PlayResult::Invalid,
+            BoardSquare::Played(_)   => PlayResult::Invalid,
+            BoardSquare::OutOfBounds => PlayResult::Invalid,
             BoardSquare::Unplayed => {
                 let mut captured_coords: Vec<(usize, usize)> = Vec::new();
                 
@@ -42,8 +51,8 @@ impl Game {
                 }
                 
                 match captured_coords.len() {
-                    0 => return self.last_valid_uncommited_play = PlayResult::Invalid,
-                    _ => return self.last_valid_uncommited_play = PlayResult::ValidWithScore(ValidPlay::new(
+                    0 => PlayResult::Invalid,
+                    _ => PlayResult::ValidWithScore(ValidPlay::new(
                         captured_coords.len() + 1,
                         coord,
                         captured_coords,
@@ -66,6 +75,22 @@ impl Game {
                 self.current_player = self.current_opponent();
 
                 Ok(())
+            }
+        }
+    }
+
+    pub fn try_play(&mut self, coord: (usize, usize)) -> Result<(), PlayError> {
+        match self.available_positions.iter().find(|play| *play.coord() == coord) {
+            None => return Err(PlayError),
+            Some(play) => {
+                let mut coords_to_flip: Vec<(usize, usize)> = play.changed_coords().clone();
+                coords_to_flip.push(*play.coord());
+
+                self.board.set_squares(&coords_to_flip, *play.player());
+                self.current_player = self.current_opponent();
+                self.check_available_positions();
+
+                return Ok(())
             }
         }
     }
@@ -107,6 +132,19 @@ impl Game {
                     }
                 },
                 _ => return Vec::new(),
+            }
+        }
+    }
+
+    fn check_available_positions(&mut self) {
+        self.available_positions = Vec::new();
+
+        for row in 1..Board::BOARD_SIZE {
+            for column in 1..Board::BOARD_SIZE {
+                match self.check_play_new((row-1, column-1)) {
+                    PlayResult::ValidWithScore(play) => self.available_positions.push(play),
+                    _ => (), // don't add the invalid plays
+                }
             }
         }
     }
@@ -221,5 +259,31 @@ mod tests {
         
         game.current_player = Piece::Black;
         assert_eq!(game.current_opponent(), Piece::White);
+    }
+
+    #[test]
+    fn initialized_game_checks_available_positions_correctly() {
+        let game = Game::new();
+
+        assert_eq!(game.available_positions.len(), 4);
+
+        assert!(matches!(game.available_positions[0].coord(), (2,3)));
+        assert!(matches!(game.available_positions[1].coord(), (3,2)));
+        assert!(matches!(game.available_positions[2].coord(), (4,5)));
+        assert!(matches!(game.available_positions[3].coord(), (5,4)));
+    }
+
+    #[test]
+    fn played_game_rechecks_available_positions_correctly() {
+        let mut game = Game::new();
+
+        let result = game.try_play((2,3));
+        assert!(result.is_ok());
+
+        assert_eq!(game.available_positions.len(), 3);
+
+        assert!(matches!(game.available_positions[0].coord(), (2,2)));
+        assert!(matches!(game.available_positions[1].coord(), (2,4)));
+        assert!(matches!(game.available_positions[2].coord(), (4,2)));
     }
 }

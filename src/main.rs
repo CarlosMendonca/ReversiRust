@@ -11,4 +11,9 @@ fn main() {
     game.commit_last_play();
 
     println!("{}", game);
+
+    game.check_play((4, 2));
+    game.commit_last_play();
+
+    println!("{}", game);
 }

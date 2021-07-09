@@ -35,6 +35,7 @@ impl fmt::Display for BoardSquare {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct CoordinatedBoardSquare {
     coord: (usize, usize),
     square: BoardSquare,    

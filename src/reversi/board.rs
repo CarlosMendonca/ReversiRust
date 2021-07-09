@@ -2,10 +2,8 @@ use std::fmt;
 use array2d::Array2D;
 
 use crate::reversi::piece::{BoardSquare, CoordinatedBoardSquare, Piece};
-use crate::reversi::play::{ValidPlay};
 
 pub struct Board {
-    current_player: Piece,
     squares: Array2D<BoardSquare>,
 }
 
@@ -14,7 +12,6 @@ impl Board {
 
     pub fn new() -> Board {
         let mut board = Board {
-            current_player: Piece::White,
             squares: Array2D::filled_with(BoardSquare::Unplayed, Board::BOARD_SIZE, Board::BOARD_SIZE), };
 
         board.squares[(3, 3)] = BoardSquare::Played(Piece::Black);
@@ -46,20 +43,10 @@ impl Board {
 
     // This is a naive that could put the board in an invalid state, which is okay because it optimizes the code by
     // avoiding roundtrips and makes it so that the Board doens't know the rules of the game
-    pub fn capture_squares(&mut self, play: &ValidPlay) {
-        for coord in play.changed_coords() {
-            self.squares[*coord] = BoardSquare::Played(*play.player())
+    pub fn set_squares(&mut self, coords: &Vec<(usize, usize)>, player: Piece) {
+        for coord in coords {
+            self.squares[*coord] = BoardSquare::Played(player);
         }
-    }
-
-    // Not sure this is idiomatic
-    pub fn current_player(&self) -> &Piece {
-        &self.current_player
-    }
-
-    // Not sure this is idiomatic
-    pub fn current_player_mut(&mut self) -> &mut Piece {
-        &mut self.current_player
     }
 }
 
@@ -94,9 +81,6 @@ mod tests {
     fn can_initialize_board() {
         let board = Board::new();
 
-        // Asserting first player
-        assert_eq!(board.current_player, Piece::White, "first player must be white");
-
         // Asserting initial positions
         assert_eq!(board.squares[(3, 3)], BoardSquare::Played(Piece::Black));
         assert_eq!(board.squares[(4, 4)], BoardSquare::Played(Piece::Black));
@@ -106,5 +90,18 @@ mod tests {
         // Asserting board size, which must be 8 to avoid problems with isize <-> conversions
         assert_eq!(board.squares.num_columns(), 8);
         assert_eq!(board.squares.num_rows(), 8);
+    }
+
+    #[test]
+    fn capture_pieces_correctly() {
+        let mut board = Board::new();
+        let coords: &mut Vec<(usize, usize)> = &mut Vec::new();
+        coords.push((3,2));
+        coords.push((3,3));
+
+        board.set_squares(coords, Piece::White);
+
+        assert_eq!(board.squares[(3,2)], BoardSquare::Played(Piece::White));
+        assert_eq!(board.squares[(3,3)], BoardSquare::Played(Piece::White));
     }
 }

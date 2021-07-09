@@ -1,8 +1,14 @@
 pub mod reversi;
 
-use reversi::board::Board;
+use reversi::game::Game;
 
 fn main() {
-    let board = Board::new();
-    print!("{}", &board);
+    let mut game = Game::new();
+    
+    println!("{}", game);
+    
+    game.check_play((3, 2));
+    game.commit_last_play();
+
+    println!("{}", game);
 }

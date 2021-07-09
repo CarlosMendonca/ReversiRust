@@ -25,8 +25,16 @@ impl ValidPlay {
         }
     }
 
+    pub fn coord(&self) -> &(usize, usize) {
+        &self.coord
+    }
+
     pub fn changed_coords(&self) -> &Vec<(usize, usize)> {
         &self.changed_coords
+    }
+
+    pub fn changed_coords_mut(&mut self) -> &mut Vec<(usize, usize)> {
+        &mut self.changed_coords
     }
 
     pub fn player(&self) -> &Piece {

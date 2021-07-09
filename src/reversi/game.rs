@@ -6,6 +6,7 @@ use crate::reversi::piece::*;
 
 pub struct Game {
     board: Board,
+    current_player: Piece,
     last_valid_uncommited_play: PlayResult,
 }
 
@@ -13,6 +14,7 @@ impl Game {
     pub fn new() -> Game {
         Game {
             board: Board::new(),
+            current_player: Piece::White,
             last_valid_uncommited_play: PlayResult::Undefined,
         }
     }
@@ -34,18 +36,18 @@ impl Game {
             BoardSquare::Unplayed => {
                 let mut captured_coords: Vec<(usize, usize)> = Vec::new();
                 
-                let vectors = Game::get_all_direction_vectors();
+                let vectors = Game::get_direction_vectors();
                 for vector in vectors {
                     captured_coords.append(&mut self.get_captured_cords(coord, vector));
                 }
                 
                 match captured_coords.len() {
-                    0 => self.last_valid_uncommited_play = PlayResult::Invalid,
-                    _ => self.last_valid_uncommited_play = PlayResult::ValidWithScore(ValidPlay::new(
+                    0 => return self.last_valid_uncommited_play = PlayResult::Invalid,
+                    _ => return self.last_valid_uncommited_play = PlayResult::ValidWithScore(ValidPlay::new(
                         captured_coords.len() + 1,
                         coord,
                         captured_coords,
-                        *self.board.current_player(),
+                        self.current_player,
                     )),
                 }
             }
@@ -56,9 +58,12 @@ impl Game {
         match &self.last_valid_uncommited_play {
             PlayResult::Invalid | PlayResult::Undefined => Err(PlayError),
             PlayResult::ValidWithScore(play) => {
-                self.board.capture_squares(play);
+                let mut coords_to_flip: Vec<(usize, usize)> = play.changed_coords().clone();
+                coords_to_flip.push(*play.coord());
+
+                self.board.set_squares(&coords_to_flip, *play.player());
                 self.last_valid_uncommited_play = PlayResult::Undefined;
-                *self.board.current_player_mut() = self.current_opponent();
+                self.current_player = self.current_opponent();
 
                 Ok(())
             }
@@ -66,13 +71,13 @@ impl Game {
     }
 
     pub fn current_opponent(&self) -> Piece {
-        match self.board.current_player() {
+        match self.current_player {
             Piece::Black => Piece::White,
             Piece::White => Piece::Black,
         }
     }
 
-    fn get_all_direction_vectors() -> [(isize, isize); 8] {
+    fn get_direction_vectors() -> [(isize, isize); 8] {
         [
             ( 0,  1),
             ( 1,  0),
@@ -107,6 +112,14 @@ impl Game {
     }
 }
 
+impl fmt::Display for Game {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", self.board)?;
+
+        Ok(()) // if you got here, it means there were no errors
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PlayError;
 
@@ -120,7 +133,7 @@ impl fmt::Display for PlayError {
 
 #[cfg(test)]
 mod tests {
-    use super::{Game, Piece, PlayResult, ValidPlay};
+    use super::{BoardSquare, CoordinatedBoardSquare, Game, Piece, PlayResult, ValidPlay};
 
     #[test]
     fn can_initialize_game() {
@@ -128,6 +141,9 @@ mod tests {
 
         // Asserting play result
         assert_eq!(game.last_valid_uncommited_play, PlayResult::Undefined);
+
+        // Assert first player, which is white
+        assert_eq!(game.current_player, Piece::White);
     }
 
     #[test]
@@ -191,7 +207,10 @@ mod tests {
         assert!(result.is_ok());
 
         assert_eq!(game.last_valid_uncommited_play, PlayResult::Undefined);
-        assert_eq!(*game.board.current_player(), Piece::Black);
+        assert_eq!(game.current_player, Piece::Black);
+
+        assert_eq!(game.board.get_coord_square_at((3, 3)), CoordinatedBoardSquare::new((3, 3), BoardSquare::Played(Piece::White)));
+        assert_eq!(game.board.get_coord_square_at((3, 2)), CoordinatedBoardSquare::new((3, 2), BoardSquare::Played(Piece::White)));
     }
 
     #[test]
@@ -200,7 +219,7 @@ mod tests {
 
         assert_eq!(game.current_opponent(), Piece::Black);
         
-        *game.board.current_player_mut() = Piece::Black;
+        game.current_player = Piece::Black;
         assert_eq!(game.current_opponent(), Piece::White);
     }
 }

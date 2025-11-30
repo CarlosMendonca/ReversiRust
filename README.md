@@ -1,17 +1,11 @@
 # Text-based Reversi written in Rust
 
-This project has nix support with the help of `cargo2nix`. To get started, type the following to set up the environment (nix flakes must be enabled):
+This project has nix support with the help of devenv. To get started, type the following to set up the environment (devenv must be installed):
 ```
-$ nix develop
-```
-
-Other commands:
-```
-$ nix build .#reversi-rust
-$ nix run .#reversi-rust
+$ devenv shell
 ```
 
-Or, using Rust's own tools:
+Then, use Rust's own tools:
 ```
 $ cargo test
 $ cargo run

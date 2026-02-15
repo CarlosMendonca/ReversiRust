@@ -1,8 +1,8 @@
 use std::fmt;
 
 use crate::reversi::board::Board;
-use crate::reversi::play::*;
 use crate::reversi::piece::*;
+use crate::reversi::play::*;
 
 pub struct Game {
     board: Board,
@@ -28,16 +28,16 @@ impl Game {
 
     pub fn check_play_new(&mut self, coord: (usize, usize)) -> PlayResult {
         match self.board.get_coord_square_at(coord).square() {
-            BoardSquare::Played(_)   => PlayResult::Invalid,
+            BoardSquare::Played(_) => PlayResult::Invalid,
             BoardSquare::OutOfBounds => PlayResult::Invalid,
             BoardSquare::Unplayed => {
                 let mut captured_coords: Vec<(usize, usize)> = Vec::new();
-                
+
                 let vectors = Game::get_direction_vectors();
                 for vector in vectors {
                     captured_coords.append(&mut self.get_captured_cords(coord, vector));
                 }
-                
+
                 match captured_coords.len() {
                     0 => PlayResult::Invalid,
                     _ => PlayResult::ValidWithScore(ValidPlay::new(
@@ -52,7 +52,11 @@ impl Game {
     }
 
     pub fn try_play(&mut self, coord: (usize, usize)) -> Result<(), PlayError> {
-        match self.available_positions.iter().find(|play| *play.coord() == coord) {
+        match self
+            .available_positions
+            .iter()
+            .find(|play| *play.coord() == coord)
+        {
             None => return Err(PlayError),
             Some(play) => {
                 let mut coords_to_flip: Vec<(usize, usize)> = play.changed_coords().clone();
@@ -62,7 +66,7 @@ impl Game {
                 self.current_player = self.current_opponent();
                 self.check_available_positions();
 
-                return Ok(())
+                return Ok(());
             }
         }
     }
@@ -76,25 +80,30 @@ impl Game {
 
     fn get_direction_vectors() -> [(isize, isize); 8] {
         [
-            ( 0,  1),
-            ( 1,  0),
-            ( 1,  1),
-            ( 0, -1),
-            (-1,  0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (0, -1),
+            (-1, 0),
             (-1, -1),
-            ( 1, -1),
-            (-1,  1), ]
+            (1, -1),
+            (-1, 1),
+        ]
     }
 
     // TO-DO: nmeed to decide between coord and square
-    fn get_captured_cords(&self, coord: (usize, usize), vector: (isize, isize)) -> Vec<(usize, usize)> {
+    fn get_captured_cords(
+        &self,
+        coord: (usize, usize),
+        vector: (isize, isize),
+    ) -> Vec<(usize, usize)> {
         let mut hops: usize = 1;
         let mut switchable_coords: Vec<(usize, usize)> = Vec::new();
 
         loop {
             let current_coord_square = self.board.get_coord_square_towards(coord, vector, hops);
 
-            match current_coord_square.square() { 
+            match current_coord_square.square() {
                 BoardSquare::Played(piece) => {
                     if *piece == self.current_opponent() {
                         hops += 1;
@@ -102,7 +111,7 @@ impl Game {
                     } else {
                         return switchable_coords;
                     }
-                },
+                }
                 _ => return Vec::new(),
             }
         }
@@ -111,9 +120,9 @@ impl Game {
     fn check_available_positions(&mut self) {
         self.available_positions = Vec::new();
 
-        for row in 1..Board::BOARD_SIZE {
-            for column in 1..Board::BOARD_SIZE {
-                match self.check_play_new((row-1, column-1)) {
+        for row in 1..=Board::BOARD_SIZE {
+            for column in 1..=Board::BOARD_SIZE {
+                match self.check_play_new((row - 1, column - 1)) {
                     PlayResult::ValidWithScore(play) => self.available_positions.push(play),
                     _ => (), // don't add the invalid plays
                 }
@@ -170,39 +179,40 @@ mod tests {
         let mut play: PlayResult;
 
         play = game.check_play_new((3, 2));
-        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
-            2, // 2 because I add a new piece and capture a piece
-            (3, 2),
-            vec![(3, 3)],
-            Piece::White)));
+        assert_eq!(
+            play,
+            PlayResult::ValidWithScore(ValidPlay::new(
+                2, // 2 because I add a new piece and capture a piece
+                (3, 2),
+                vec![(3, 3)],
+                Piece::White
+            ))
+        );
 
         play = game.check_play_new((2, 3));
-        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
-            2,
-            (2, 3),
-            vec![(3, 3)],
-            Piece::White)));
+        assert_eq!(
+            play,
+            PlayResult::ValidWithScore(ValidPlay::new(2, (2, 3), vec![(3, 3)], Piece::White))
+        );
 
         play = game.check_play_new((4, 5));
-        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
-            2,
-            (4, 5),
-            vec![(4, 4)],
-            Piece::White)));
+        assert_eq!(
+            play,
+            PlayResult::ValidWithScore(ValidPlay::new(2, (4, 5), vec![(4, 4)], Piece::White))
+        );
 
         play = game.check_play_new((5, 4));
-        assert_eq!(play, PlayResult::ValidWithScore(ValidPlay::new(
-            2,
-            (5, 4),
-            vec![(4, 4)],
-            Piece::White)));
+        assert_eq!(
+            play,
+            PlayResult::ValidWithScore(ValidPlay::new(2, (5, 4), vec![(4, 4)], Piece::White))
+        );
     }
 
     #[test]
     fn playing_invalid_play_returns_error() {
         let mut game = Game::new();
 
-        assert!(game.try_play((0,0)).is_err());
+        assert!(game.try_play((0, 0)).is_err());
     }
 
     #[test]
@@ -213,8 +223,14 @@ mod tests {
 
         assert_eq!(game.current_player, Piece::Black);
 
-        assert_eq!(game.board.get_coord_square_at((3, 3)), CoordinatedBoardSquare::new((3, 3), BoardSquare::Played(Piece::White)));
-        assert_eq!(game.board.get_coord_square_at((3, 2)), CoordinatedBoardSquare::new((3, 2), BoardSquare::Played(Piece::White)));
+        assert_eq!(
+            game.board.get_coord_square_at((3, 3)),
+            CoordinatedBoardSquare::new((3, 3), BoardSquare::Played(Piece::White))
+        );
+        assert_eq!(
+            game.board.get_coord_square_at((3, 2)),
+            CoordinatedBoardSquare::new((3, 2), BoardSquare::Played(Piece::White))
+        );
     }
 
     #[test]
@@ -222,7 +238,7 @@ mod tests {
         let mut game = Game::new();
 
         assert_eq!(game.current_opponent(), Piece::Black);
-        
+
         game.current_player = Piece::Black;
         assert_eq!(game.current_opponent(), Piece::White);
     }
@@ -233,29 +249,57 @@ mod tests {
 
         assert_eq!(game.available_positions.len(), 4);
 
-        assert!(matches!(game.available_positions[0].coord(), (2,3)));
-        assert!(matches!(game.available_positions[1].coord(), (3,2)));
-        assert!(matches!(game.available_positions[2].coord(), (4,5)));
-        assert!(matches!(game.available_positions[3].coord(), (5,4)));
+        assert!(matches!(game.available_positions[0].coord(), (2, 3)));
+        assert!(matches!(game.available_positions[1].coord(), (3, 2)));
+        assert!(matches!(game.available_positions[2].coord(), (4, 5)));
+        assert!(matches!(game.available_positions[3].coord(), (5, 4)));
+    }
+
+    #[test]
+    fn game_checks_limits_of_the_board_correctly() {
+        // This test catches the off-by-one bug where the loop uses
+        // `1..Board::BOARD_SIZE` instead of `1..=Board::BOARD_SIZE`,
+        // which would skip checking row 7 and column 7 (0-indexed).
+        let mut game: Game = Game::new();
+
+        // Minimal setup: White at (5,5), Black at (6,6)
+        // White playing at (7,7) captures the Black piece via the diagonal
+        game.board.set_squares(&vec![(5, 5)], Piece::White);
+        game.board.set_squares(&vec![(6, 6)], Piece::Black);
+
+        game.check_available_positions();
+
+        let corner_move = game
+            .available_positions
+            .iter()
+            .find(|play| *play.coord() == (7, 7));
+
+        assert_eq!(
+            corner_move,
+            Some(&ValidPlay::new(
+                2,            // score: 1 new piece + 1 capture
+                (7, 7),       // coord
+                vec![(6, 6)], // captured piece
+                Piece::White,
+            ))
+        );
     }
 
     #[test]
     fn played_game_rechecks_available_positions_correctly() {
         let mut game = Game::new();
 
-        let result = game.try_play((2,3));
+        let result = game.try_play((2, 3));
         assert!(result.is_ok());
 
         assert_eq!(game.available_positions.len(), 3);
 
-        assert!(matches!(game.available_positions[0].coord(), (2,2)));
-        assert!(matches!(game.available_positions[1].coord(), (2,4)));
-        assert!(matches!(game.available_positions[2].coord(), (4,2)));
+        assert!(matches!(game.available_positions[0].coord(), (2, 2)));
+        assert!(matches!(game.available_positions[1].coord(), (2, 4)));
+        assert!(matches!(game.available_positions[2].coord(), (4, 2)));
     }
 
     #[test]
     #[ignore]
-    fn game_over_correctly_indicated() {
-
-    }
+    fn game_over_correctly_indicated() {}
 }

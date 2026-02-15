@@ -41,8 +41,9 @@ impl Board {
         )
     }
 
-    // This is a naive that could put the board in an invalid state, which is okay because it optimizes the code by
-    // avoiding roundtrips and makes it so that the Board doens't know the rules of the game
+    // This is a naive method that could put the board in an invalid state,
+    // which is okay because it optimizes the code by avoiding roundtrips and
+    // makes it so that the Board doesn't know the rules of the game
     pub fn set_squares(&mut self, coords: &Vec<(usize, usize)>, player: Piece) {
         for coord in coords {
             self.squares[*coord] = BoardSquare::Played(player);

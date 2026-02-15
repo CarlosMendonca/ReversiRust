@@ -52,8 +52,8 @@ impl Board {
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        const HEADER:      &'static str = "   | A | B | C | D | E | F | G | H |";
-        const ROW_DIVIDER: &'static str = "---+---+---+---+---+---+---+---+---+";
+        const HEADER:      &str = "   | A | B | C | D | E | F | G | H |";
+        const ROW_DIVIDER: &str = "---+---+---+---+---+---+---+---+---+";
 
         writeln!(f, "{}", HEADER)?;
         writeln!(f, "{}", ROW_DIVIDER)?;

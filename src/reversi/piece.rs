@@ -28,7 +28,8 @@ impl fmt::Display for BoardSquare {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
        match self {
            BoardSquare::Played(p) => write!(f, "{}", p)?,
-           _ => write!(f, "?")?,
+           BoardSquare::Unplayed => write!(f, " ")?,
+           BoardSquare::OutOfBounds => write!(f, "?")?,
        }
 
        Ok(())

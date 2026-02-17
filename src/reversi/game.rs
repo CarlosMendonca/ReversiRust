@@ -23,7 +23,7 @@ impl Game {
     }
 
     pub fn is_game_over(&self) -> bool {
-        self.available_positions.len() == 0
+        self.available_positions.is_empty()
     }
 
     pub fn check_play_new(&mut self, coord: (usize, usize)) -> PlayResult {
@@ -52,23 +52,27 @@ impl Game {
     }
 
     pub fn try_play(&mut self, coord: (usize, usize)) -> Result<(), PlayError> {
-        match self
-            .available_positions
+        let play = self.available_positions
             .iter()
             .find(|play| *play.coord() == coord)
-        {
-            None => return Err(PlayError),
-            Some(play) => {
-                let mut coords_to_flip: Vec<(usize, usize)> = play.changed_coords().clone();
-                coords_to_flip.push(*play.coord());
+            .ok_or(PlayError)?;
 
-                self.board.set_squares(&coords_to_flip, *play.player());
-                self.current_player = self.current_opponent();
-                self.check_available_positions();
+        // Place the new piece and flip captured pieces
+        let mut coords_to_flip = play.changed_coords().clone();
+        coords_to_flip.push(*play.coord());
+        self.board.set_squares(&coords_to_flip, *play.player());
 
-                return Ok(());
-            }
+        // Switch to opponent and check their available moves
+        self.current_player = self.current_opponent();
+        self.check_available_positions();
+
+        // If opponent has no moves, pass the turn back
+        if self.available_positions.is_empty() {
+            self.current_player = self.current_opponent();
+            self.check_available_positions();
         }
+
+        Ok(())
     }
 
     pub fn current_opponent(&self) -> Piece {
@@ -91,7 +95,7 @@ impl Game {
         ]
     }
 
-    // TO-DO: nmeed to decide between coord and square
+    // TO-DO: need to decide between coord and square
     fn get_captured_cords(
         &self,
         coord: (usize, usize),
@@ -299,7 +303,86 @@ mod tests {
         assert!(matches!(game.available_positions[2].coord(), (4, 2)));
     }
 
+    /// Creates a Game where all squares are White except for the given
+    /// black and empty positions. Current player is set to White with
+    /// available positions already calculated.
+    fn create_endgame(
+        black: &[(usize, usize)],
+        empty: &[(usize, usize)],
+    ) -> Game {
+        let mut game = Game::new();
+
+        let white: Vec<(usize, usize)> = (0..8)
+            .flat_map(|r| (0..8).map(move |c| (r, c)))
+            .filter(|pos| !black.contains(pos) && !empty.contains(pos))
+            .collect();
+
+        game.board.set_squares(&white, Piece::White);
+        game.board.set_squares(&black.to_vec(), Piece::Black);
+        game.current_player = Piece::White;
+        game.check_available_positions();
+
+        game
+    }
+
     #[test]
-    #[ignore]
-    fn game_over_correctly_indicated() {}
+    fn turn_passes_when_opponent_has_no_moves() {
+        // Nearly-full board:
+        //      0  1  2  3  4  5  6  7
+        //  0:  W  .  W  W  W  W  W  W
+        //  1:  W  B  W  W  W  W  W  W
+        //  2:  W  W  W  W  W  W  W  W
+        //  3:  W  W  W  W  W  W  W  W
+        //  4:  W  W  W  W  W  W  W  W
+        //  5:  W  W  W  W  W  W  W  W
+        //  6:  W  W  W  W  W  W  W  W
+        //  7:  W  W  W  W  W  B  .  W
+        //
+        // White plays (7,6), capturing (7,5).
+        // After: Black only at (1,1), empty only at (0,1).
+        // Black cannot play (0,1) -- no direction has White leading to Black.
+        // White CAN play (0,1) -- direction (1,0): (1,1)=B --> (2,1)=W.
+        // So Black's turn is passed and White plays again.
+        let mut game = create_endgame(
+            &[(1, 1), (7, 5)],
+            &[(0, 1), (7, 6)],
+        );
+
+        assert_eq!(game.current_player, Piece::White); // before playing, player is White
+        let result = game.try_play((7, 6));
+        assert!(result.is_ok());
+
+        assert_eq!(game.current_player, Piece::White); // after playing, player is still White
+        assert!(!game.is_game_over());
+    }
+
+    #[test]
+    fn game_over_when_neither_player_has_moves() {
+        // Nearly-full board (same as pass test but (0,0)=B instead of (1,1)=B):
+        //      0  1  2  3  4  5  6  7
+        //  0:  B  .  W  W  W  W  W  W
+        //  1:  W  W  W  W  W  W  W  W
+        //  2:  W  W  W  W  W  W  W  W
+        //  3:  W  W  W  W  W  W  W  W
+        //  4:  W  W  W  W  W  W  W  W
+        //  5:  W  W  W  W  W  W  W  W
+        //  6:  W  W  W  W  W  W  W  W
+        //  7:  W  W  W  W  W  B  .  W
+        //
+        // White plays (7,6), capturing (7,5).
+        // After: Black only at (0,0), empty only at (0,1).
+        // Black cannot play (0,1) -- no direction has White leading to Black.
+        // White cannot play (0,1) either -- (0,0) is in the corner, uncapturable.
+        // Neither player can move --> game over.
+        let mut game = create_endgame(
+            &[(0, 0), (7, 5)],
+            &[(0, 1), (7, 6)],
+        );
+
+        assert_eq!(game.current_player, Piece::White); // initial condition from the Board factory
+        let result = game.try_play((7, 6));
+        assert!(result.is_ok());
+
+        assert!(game.is_game_over());
+    }
 }

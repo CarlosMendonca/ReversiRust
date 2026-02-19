@@ -28,7 +28,8 @@ impl Game {
     }
 
     pub fn check_play_new(&mut self, coord: Coord) -> PlayResult {
-        match self.board.get_coord_square_at(coord).square() {
+        let (_, square) = self.board.get_coord_square_at(coord);
+        match square {
             BoardSquare::Played(_) => PlayResult::Invalid,
             BoardSquare::OutOfBounds => PlayResult::Invalid,
             BoardSquare::Unplayed => {
@@ -106,13 +107,13 @@ impl Game {
         let mut switchable_coords: Vec<Coord> = Vec::new();
 
         loop {
-            let current_coord_square = self.board.get_coord_square_towards(coord, vector, hops);
+            let (current_coord, current_square) = self.board.get_coord_square_towards(coord, vector, hops);
 
-            match current_coord_square.square() {
+            match current_square {
                 BoardSquare::Played(piece) => {
-                    if *piece == self.current_opponent() {
+                    if piece == self.current_opponent() {
                         hops += 1;
-                        switchable_coords.push(*current_coord_square.coord());
+                        switchable_coords.push(current_coord);
                     } else {
                         return switchable_coords;
                     }
@@ -157,7 +158,7 @@ impl fmt::Display for PlayError {
 
 #[cfg(test)]
 mod tests {
-    use super::{BoardSquare, CoordinatedBoardSquare, Game, Piece, PlayResult, ValidPlay};
+    use super::{BoardSquare, Game, Piece, PlayResult, ValidPlay};
     use crate::reversi::coord::Coord;
 
     #[test]
@@ -231,11 +232,11 @@ mod tests {
 
         assert_eq!(
             game.board.get_coord_square_at((3, 3).into()),
-            CoordinatedBoardSquare::new((3, 3).into(), BoardSquare::Played(Piece::White))
+            (Coord::from((3, 3)), BoardSquare::Played(Piece::White))
         );
         assert_eq!(
             game.board.get_coord_square_at((3, 2).into()),
-            CoordinatedBoardSquare::new((3, 2).into(), BoardSquare::Played(Piece::White))
+            (Coord::from((3, 2)), BoardSquare::Played(Piece::White))
         );
     }
 

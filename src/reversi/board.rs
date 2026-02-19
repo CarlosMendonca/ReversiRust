@@ -2,7 +2,7 @@ use std::fmt;
 use array2d::Array2D;
 
 use crate::reversi::coord::{Coord, Vector};
-use crate::reversi::piece::{BoardSquare, CoordinatedBoardSquare, Piece};
+use crate::reversi::piece::{BoardSquare, Piece};
 
 pub struct Board {
     squares: Array2D<BoardSquare>,
@@ -23,20 +23,17 @@ impl Board {
         board
     }
 
-    pub fn get_coord_square_at(&self, coord: Coord) -> CoordinatedBoardSquare {
-        return Board::get_coord_square_towards(self, coord, (0, 0).into(), 0)
+    pub fn get_coord_square_at(&self, coord: Coord) -> (Coord, BoardSquare) {
+        self.get_coord_square_towards(coord, (0, 0).into(), 0)
     }
 
     // This method will fail catastrophically for big board sizes (isize::MAX+1)!
-    pub fn get_coord_square_towards(&self, coord: Coord, vector: Vector, hops: usize) -> CoordinatedBoardSquare {
+    pub fn get_coord_square_towards(&self, coord: Coord, vector: Vector, hops: usize) -> (Coord, BoardSquare) {
         match coord.towards(&vector, hops) {
             Some(dest) if dest.row < self.squares.num_rows() && dest.col < self.squares.num_columns() => {
-                CoordinatedBoardSquare::new(
-                    dest,
-                    self.squares[(dest.row, dest.col)],
-                )
+                (dest, self.squares[(dest.row, dest.col)])
             }
-            _ => CoordinatedBoardSquare::new(coord, BoardSquare::OutOfBounds),
+            _ => (coord, BoardSquare::OutOfBounds),
         }
     }
 

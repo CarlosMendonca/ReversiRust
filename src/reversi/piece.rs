@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::reversi::coord::Coord;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Piece {
     Black,
@@ -38,19 +40,19 @@ impl fmt::Display for BoardSquare {
 
 #[derive(Debug, PartialEq)]
 pub struct CoordinatedBoardSquare {
-    coord: (usize, usize),
-    square: BoardSquare,    
+    coord: Coord,
+    square: BoardSquare,
 }
 
 impl CoordinatedBoardSquare {
-    pub fn new(coord: (usize, usize), square: BoardSquare) -> CoordinatedBoardSquare {
-        CoordinatedBoardSquare { 
+    pub fn new(coord: Coord, square: BoardSquare) -> CoordinatedBoardSquare {
+        CoordinatedBoardSquare {
             coord: coord,
             square: square,
         }
     }
 
-    pub fn coord(&self) -> &(usize, usize) {
+    pub fn coord(&self) -> &Coord {
         &self.coord
     }
 

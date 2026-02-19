@@ -1,3 +1,4 @@
+use crate::reversi::coord::Coord;
 use crate::reversi::piece::Piece;
 
 #[derive(Debug, PartialEq)]
@@ -8,16 +9,16 @@ pub enum PlayResult {
 } 
 
 #[derive(Debug, PartialEq)]
-pub struct ValidPlay { 
+pub struct ValidPlay {
     score: usize,
-    coord: (usize, usize),
-    changed_coords: Vec<(usize, usize)>,
+    coord: Coord,
+    changed_coords: Vec<Coord>,
     player: Piece,
 }
 
 impl ValidPlay {
-    pub fn new(score: usize, coord: (usize, usize), changed_coords: Vec<(usize, usize)>, player: Piece) -> ValidPlay {
-        ValidPlay { 
+    pub fn new(score: usize, coord: Coord, changed_coords: Vec<Coord>, player: Piece) -> ValidPlay {
+        ValidPlay {
             score: score,
             coord: coord,
             changed_coords: changed_coords,
@@ -25,15 +26,15 @@ impl ValidPlay {
         }
     }
 
-    pub fn coord(&self) -> &(usize, usize) {
+    pub fn coord(&self) -> &Coord {
         &self.coord
     }
 
-    pub fn changed_coords(&self) -> &Vec<(usize, usize)> {
+    pub fn changed_coords(&self) -> &Vec<Coord> {
         &self.changed_coords
     }
 
-    pub fn changed_coords_mut(&mut self) -> &mut Vec<(usize, usize)> {
+    pub fn changed_coords_mut(&mut self) -> &mut Vec<Coord> {
         &mut self.changed_coords
     }
 

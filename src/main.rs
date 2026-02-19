@@ -4,14 +4,14 @@ use reversi::game::Game;
 
 fn main() {
     let mut game = Game::new();
-    
-    println!("{}", game);
-    
-    game.try_play((3, 2));
 
     println!("{}", game);
 
-    game.try_play((4, 2));
+    game.try_play((3, 2).into());
+
+    println!("{}", game);
+
+    game.try_play((4, 2).into());
 
     println!("{}", game);
 }

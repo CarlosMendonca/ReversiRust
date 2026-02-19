@@ -86,14 +86,14 @@ impl Game {
 
     fn get_direction_vectors() -> [Vector; 8] {
         [
-            (0, 1).into(),
-            (1, 0).into(),
-            (1, 1).into(),
-            (0, -1).into(),
-            (-1, 0).into(),
+            ( 0,  1).into(),
+            ( 1,  0).into(),
+            ( 1,  1).into(),
+            ( 0, -1).into(),
+            (-1,  0).into(),
             (-1, -1).into(),
-            (1, -1).into(),
-            (-1, 1).into(),
+            ( 1, -1).into(),
+            (-1,  1).into(),
         ]
     }
 

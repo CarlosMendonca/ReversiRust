@@ -110,14 +110,11 @@ impl Game {
             let (current_coord, current_square) = self.board.get_coord_square_towards(coord, vector, hops);
 
             match current_square {
-                BoardSquare::Played(piece) => {
-                    if piece == self.current_opponent() {
-                        hops += 1;
-                        switchable_coords.push(current_coord);
-                    } else {
-                        return switchable_coords;
-                    }
+                BoardSquare::Played(piece) if piece == self.current_opponent() => {
+                    hops += 1;
+                    switchable_coords.push(current_coord);
                 }
+                BoardSquare::Played(_) => return switchable_coords,
                 _ => return Vec::new(),
             }
         }

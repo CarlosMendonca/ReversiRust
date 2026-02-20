@@ -6,6 +6,16 @@ pub enum Piece {
     White,
 }
 
+// TODO create a test for this
+impl Piece {
+    pub fn opponent(&self) -> Piece {
+        match self {
+            Piece::Black => Piece::White,
+            Piece::White => Piece::Black,
+        }
+    }
+}
+
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
        match self {
@@ -33,5 +43,16 @@ impl fmt::Display for BoardSquare {
        }
 
        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::reversi::piece::Piece;
+
+    #[test]
+    fn can_determine_opponent() {
+        assert_eq!(Piece::White.opponent(), Piece::Black);
+        assert_eq!(Piece::Black.opponent(), Piece::White);
     }
 }

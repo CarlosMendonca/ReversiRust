@@ -2,23 +2,23 @@ use crate::reversi::coord::Coord;
 use crate::reversi::piece::Piece;
 
 #[derive(Debug, PartialEq)]
-pub enum PlayResult {
-    ValidWithScore(ValidPlay),
+pub enum MoveResult {
+    ValidWithScore(ValidMove),
     Invalid,
     Undefined,
 } 
 
 #[derive(Debug, PartialEq)]
-pub struct ValidPlay {
+pub struct ValidMove {
     score: usize,
     coord: Coord,
     changed_coords: Vec<Coord>,
     player: Piece,
 }
 
-impl ValidPlay {
-    pub fn new(score: usize, coord: Coord, changed_coords: Vec<Coord>, player: Piece) -> ValidPlay {
-        ValidPlay {
+impl ValidMove {
+    pub fn new(score: usize, coord: Coord, changed_coords: Vec<Coord>, player: Piece) -> ValidMove {
+        ValidMove {
             score: score,
             coord: coord,
             changed_coords: changed_coords,

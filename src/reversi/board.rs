@@ -23,6 +23,10 @@ impl Board {
         board
     }
 
+    pub fn is_in_bounds(&self, coord: &Coord) -> bool {
+        coord.row < self.squares.num_rows() && coord.col < self.squares.num_columns()
+    }
+
     pub fn get_coord_square_at(&self, coord: Coord) -> (Coord, BoardSquare) {
         self.get_coord_square_towards(coord, (0, 0).into(), 0)
     }
@@ -101,5 +105,20 @@ mod tests {
 
         assert_eq!(board.squares[(3,2)], BoardSquare::Played(Piece::White));
         assert_eq!(board.squares[(3,3)], BoardSquare::Played(Piece::White));
+    }
+
+    #[test]
+    fn is_in_bounds_checks_correctly() {
+        let board = Board::new();
+
+        // Valid coordinates
+        assert!(board.is_in_bounds(&(0, 0).into()));  // top-left corner
+        assert!(board.is_in_bounds(&(7, 7).into()));  // bottom-right corner
+        assert!(board.is_in_bounds(&(3, 4).into()));  // center
+
+        // Out of bounds
+        assert!(!board.is_in_bounds(&(8, 0).into())); // one past last row
+        assert!(!board.is_in_bounds(&(0, 8).into())); // one past last column
+        assert!(!board.is_in_bounds(&(9, 9).into())); // well beyond
     }
 }

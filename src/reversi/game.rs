@@ -68,35 +68,33 @@ impl Game {
     }
 
     pub fn try_play(&mut self, move_coord: Coord) -> Result<(), PlayError> {
-        // Should prob check if game is over at this point
+        if self.state == GameState::GameOver { return Err(PlayError::GameOver); }
+
+        if !self.board.is_in_bounds(&move_coord) { return Err(PlayError::OutOfBounds); }
 
         let confirmed_valid_move = self.current_turn.valid_moves
             .iter()
-            .find(|_move| *_move.coord() == move_coord)
-            .ok_or(PlayError)?;
+            .find(|mv| *mv.coord() == move_coord)
+            .ok_or(PlayError::InvalidMove)?;
 
         // Place the new piece and flip captured pieces
         let mut coords_to_flip = confirmed_valid_move.changed_coords().clone(); // get pre-calculated coords to flip from valid play
         coords_to_flip.push(*confirmed_valid_move.coord()); // add the play itself; maybe this should already be inside the coords to flip
         self.board.set_squares(&coords_to_flip, self.current_turn.player);
-
         self.state = GameState::Played;
-
         self.advance_to_next_turn();
-        if self.current_turn_has_valid_moves() {
-            return Ok(());
-        }
 
-        // process another turn
+        if self.current_turn_has_valid_moves() { return Ok(()); }
+
+        // Else, process another turn
         self.state = GameState::PlayedAndPassed;
         self.advance_to_next_turn();
-        if self.current_turn_has_valid_moves() {
-            return Ok(());
-        }
+        
+        if self.current_turn_has_valid_moves() { return Ok(()); }
 
-        // return game over
+        // Else return GameOver
         self.state = GameState::GameOver;
-        return Ok(());
+        Ok(())
     }
 
     fn advance_to_next_turn(&mut self) {
@@ -175,13 +173,19 @@ impl fmt::Display for Game {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlayError;
+pub enum PlayError {
+    InvalidMove,
+    OutOfBounds,
+    GameOver,
+}
 
 impl fmt::Display for PlayError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid play")?;
-
-        Ok(())
+        match self {
+            PlayError::InvalidMove => write!(f, "Invalid move"),
+            PlayError::OutOfBounds => write!(f, "Out of bounds"),
+            PlayError::GameOver => write!(f, "Game is over"),
+        }
     }
 }
 

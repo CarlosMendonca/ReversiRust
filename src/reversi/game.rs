@@ -33,7 +33,6 @@ impl Game {
             state: GameState::New,
         };
         
-        // TODO determine what we should do with the error here
         // Advance to next turn knows how to handle a new game
         game.advance_to_next_turn();
         game
@@ -100,20 +99,19 @@ impl Game {
         return Ok(());
     }
 
-    // TODO write tests for the logic that determines the next_turn_player
-    fn advance_to_next_turn(&mut self) -> Result<(), PlayError> {
+    fn advance_to_next_turn(&mut self) {
+        debug_assert_ne!(self.state, GameState::GameOver, "advance_to_next_turn called in GameOver state");
+
         let next_turn_player = match self.state {
-            GameState::New => self.current_turn.player, // if the game is new, don't flip players
-            GameState::Played | GameState::PlayedAndPassed => self.current_turn.player.opponent(), // if the game is Played or PlayedAndPassed, flip players
-            GameState::GameOver => return Err(PlayError), // if the game is over, it cannot advance to next turn
+            GameState::New => self.current_turn.player,
+            GameState::Played | GameState::PlayedAndPassed => self.current_turn.player.opponent(),
+            GameState::GameOver => unreachable!(),
         };
 
         self.current_turn = Turn {
             player: next_turn_player,
             valid_moves: self.calculate_valid_moves_for(next_turn_player),
         };
-
-        return Ok(());
     }
 
     fn current_turn_has_valid_moves(&self) -> bool {

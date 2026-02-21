@@ -18,10 +18,43 @@ pub enum GameState {
     GameOver,
 }
 
+pub struct Score {
+    black: usize,
+    white: usize,
+}
+
+impl Score {
+    pub fn new(black: usize, white: usize) -> Score {
+        Score { black, white }
+    }
+
+    pub fn for_player(&self, piece: Piece) -> usize {
+        match piece {
+            Piece::Black => self.black,
+            Piece::White => self.white,
+        }
+    }
+
+    fn add(&mut self, piece: Piece, points: usize) {
+        match piece {
+            Piece::Black => self.black += points,
+            Piece::White => self.white += points,
+        }
+    }
+
+    fn subtract(&mut self, piece: Piece, points: usize) {
+        match piece {
+            Piece::Black => self.black -= points,
+            Piece::White => self.white -= points,
+        }
+    }
+}
+
 pub struct Game {
     board: Board,
     current_turn: Turn,
     state: GameState,
+    score: Score,
 }
 
 impl Game {
@@ -31,6 +64,7 @@ impl Game {
             board: Board::new(),
             current_turn: Turn { player: Piece::White, valid_moves: Vec::new() },
             state: GameState::New,
+            score: Score::new(2, 2),
         };
         
         // Advance to next turn knows how to handle a new game
@@ -40,6 +74,10 @@ impl Game {
 
     pub fn current_turn(&self) -> &Turn {
         &self.current_turn
+    }
+
+    pub fn score(&self) -> &Score {
+        &self.score
     }
 
     fn check_move_for(&self, player: Piece, at_coord: Coord) -> MoveResult {
@@ -81,6 +119,12 @@ impl Game {
         let mut coords_to_flip = confirmed_valid_move.changed_coords().clone(); // get pre-calculated coords to flip from valid play
         coords_to_flip.push(*confirmed_valid_move.coord()); // add the play itself; maybe this should already be inside the coords to flip
         self.board.set_squares(&coords_to_flip, self.current_turn.player);
+
+        // TODO: determine if this is the best way of keeping track of the score (as you go versus counting)
+        let captured_count = confirmed_valid_move.changed_coords().len();
+        self.score.add(self.current_turn.player, captured_count + 1); // Number of opponent pieces captured + the piece placed
+        self.score.subtract(self.current_turn.player.opponent(), captured_count); // Number of pieces captued by player
+
         self.state = GameState::Played;
         self.advance_to_next_turn();
 
@@ -198,9 +242,12 @@ mod tests {
     fn can_initialize_game() {
         let game = Game::new();
 
-        // Assert first player, which is white
+        // Assert first player, which is White
         assert_eq!(game.current_turn.player, Piece::White);
         assert_eq!(game.state, GameState::New);
+
+        assert_eq!(game.score.for_player(Piece::White), 2);
+        assert_eq!(game.score.for_player(Piece::Black), 2);
     }
 
     #[test]
@@ -262,6 +309,7 @@ mod tests {
         assert!(game.try_play((3, 2).into()).is_ok());
 
         assert_eq!(game.current_turn.player, Piece::Black);
+
 
         assert_eq!(
             game.board.get_coord_square_at((3, 3).into()),
@@ -329,6 +377,7 @@ mod tests {
         assert_eq!(game.current_turn.valid_moves.len(), 3);
         assert_eq!(game.current_turn.player, Piece::Black);
 
+
         assert_eq!(*game.current_turn.valid_moves[0].coord(), Coord::from((2, 2)));
         assert_eq!(*game.current_turn.valid_moves[1].coord(), Coord::from((2, 4)));
         assert_eq!(*game.current_turn.valid_moves[2].coord(), Coord::from((4, 2)));
@@ -388,6 +437,7 @@ mod tests {
         assert!(result.is_ok());
 
         assert_eq!(game.current_turn.player, Piece::White); // after playing, player is still White
+
         assert_eq!(game.state, GameState::PlayedAndPassed);
     }
 
@@ -418,6 +468,24 @@ mod tests {
         let result = game.try_play((7, 6).into());
         assert!(result.is_ok());
 
+
         assert_eq!(game.state, GameState::GameOver);
+    }
+
+    #[test]
+    fn score_tracks_correctly_after_plays() {
+        let mut game = Game::new();
+
+        // Initial scores: 2 each
+        assert_eq!(game.score.for_player(Piece::White), 2);
+        assert_eq!(game.score.for_player(Piece::Black), 2);
+
+        // White plays (3,2), captures 1 black piece at (3,3)
+        // White: 2 + 1 (placed) + 1 (captured) = 4
+        // Black: 2 - 1 (lost) = 1
+        game.try_play((3, 2).into()).unwrap();
+
+        assert_eq!(game.score.for_player(Piece::White), 4);
+        assert_eq!(game.score.for_player(Piece::Black), 1);
     }
 }

@@ -33,8 +33,9 @@ impl Game {
             state: GameState::New,
         };
         
-        // TODO find a way to call advance_to_next_turn to avoid code repetition
-        game.current_turn.valid_moves = game.calculate_valid_moves_for(game.current_turn.player);
+        // TODO determine what we should do with the error here
+        // Advance to next turn knows how to handle a new game
+        game.advance_to_next_turn();
         game
     }
 
@@ -80,17 +81,17 @@ impl Game {
         coords_to_flip.push(*confirmed_valid_move.coord()); // add the play itself; maybe this should already be inside the coords to flip
         self.board.set_squares(&coords_to_flip, self.current_turn.player);
 
+        self.state = GameState::Played;
+
         self.advance_to_next_turn();
-        if self.current_turn_has_valid_moves() { 
-            self.state = GameState::Played;
+        if self.current_turn_has_valid_moves() {
             return Ok(());
         }
 
         // process another turn
+        self.state = GameState::PlayedAndPassed;
         self.advance_to_next_turn();
         if self.current_turn_has_valid_moves() {
-            // return played&passed
-            self.state = GameState::PlayedAndPassed;
             return Ok(());
         }
 
@@ -99,14 +100,20 @@ impl Game {
         return Ok(());
     }
 
-    fn advance_to_next_turn(&mut self) {
-        let oponent = self.current_turn.player.opponent();
-        let opponent_valid_moves = self.calculate_valid_moves_for(oponent);
+    // TODO write tests for the logic that determines the next_turn_player
+    fn advance_to_next_turn(&mut self) -> Result<(), PlayError> {
+        let next_turn_player = match self.state {
+            GameState::New => self.current_turn.player, // if the game is new, don't flip players
+            GameState::Played | GameState::PlayedAndPassed => self.current_turn.player.opponent(), // if the game is Played or PlayedAndPassed, flip players
+            GameState::GameOver => return Err(PlayError), // if the game is over, it cannot advance to next turn
+        };
 
         self.current_turn = Turn {
-            player: oponent,
-            valid_moves: opponent_valid_moves,
-        }
+            player: next_turn_player,
+            valid_moves: self.calculate_valid_moves_for(next_turn_player),
+        };
+
+        return Ok(());
     }
 
     fn current_turn_has_valid_moves(&self) -> bool {
@@ -312,10 +319,13 @@ mod tests {
     fn played_game_rechecks_available_positions_correctly() {
         let mut game = Game::new();
 
+        assert_eq!(game.current_turn.player, Piece::White);
+
         let result = game.try_play((2, 3).into());
         assert!(result.is_ok());
 
         assert_eq!(game.current_turn.valid_moves.len(), 3);
+        assert_eq!(game.current_turn.player, Piece::Black);
 
         assert_eq!(*game.current_turn.valid_moves[0].coord(), Coord::from((2, 2)));
         assert_eq!(*game.current_turn.valid_moves[1].coord(), Coord::from((2, 4)));

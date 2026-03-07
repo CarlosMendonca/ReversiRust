@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     libasound2t64 \
     libgl1-mesa-dri \
     libpulse0 \
+    libclang-dev \
     libudev-dev \
     libssl-dev \
     pkg-config \
@@ -35,6 +36,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && cargo install cargo-playdate --version 0.5.8 --locked
 
 ENV PLAYDATE_SDK_PATH=/opt/playdate-sdk
+ENV ARM_GCC_PATH=/usr/bin/arm-none-eabi-gcc
 ENV PATH="/root/.cargo/bin:${PLAYDATE_SDK_PATH}/bin:${PATH}"
 
 WORKDIR /workspace

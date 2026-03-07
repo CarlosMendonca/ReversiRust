@@ -10,3 +10,9 @@ Then, use Rust's own tools:
 $ cargo test
 $ cargo run
 ```
+
+# TO-DO
+
+- create a TUI inspired by [Nudoku](https://jubalh.github.io/nudoku/) and other such CLI games
+- implement some AI
+- start porting to Playdate
